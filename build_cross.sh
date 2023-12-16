@@ -9,11 +9,11 @@ root=$(pwd)
 [ ! -d uploads ] && mkdir uploads
 
 pull_docker_image() {
-    docker pull ghcr.io/gngpp/ninja-builder:$1
+    docker pull ghcr.io/wangsyi/ninja-builder:$1
 }
 
 rmi_docker_image() {
-    docker rmi ghcr.io/gngpp/ninja-builder:$1
+    docker rmi ghcr.io/wangsyi/ninja-builder:$1
 }
 
 build_macos_target() {
@@ -40,7 +40,7 @@ build_linux_target() {
         -v $HOME/.cargo/registry:/root/.cargo/registry \
         -v $HOME/.cargo/git:/root/.cargo/git \
         -e "FEATURES=$features" \
-        ghcr.io/gngpp/ninja-builder:$1 /bin/bash -c "cargo build --release \$FEATURES"
+        ghcr.io/wangsyi/ninja-builder:$1 /bin/bash -c "cargo build --release \$FEATURES"
 
     sudo chmod -R 777 target
     upx --best --lzma target/$1/release/ninja
@@ -57,7 +57,7 @@ build_windows_target() {
         -v $(pwd):/home/rust/src \
         -v $HOME/.cargo/registry:/usr/local/cargo/registry \
         -v $HOME/.cargo/git:/usr/local/cargo/git \
-        ghcr.io/gngpp/ninja-builder:$1 cargo xwin build --release --target $1
+        ghcr.io/wangsyi/ninja-builder:$1 cargo xwin build --release --target $1
     sudo chmod -R 777 target
     sudo upx --best --lzma target/$1/release/ninja.exe
     cd target/$1/release
