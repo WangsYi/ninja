@@ -1,5 +1,7 @@
 <br>简体中文 | [English](README.md)
 
+> 自用，修改了在vps上报错os error:99问题
+
 [![CI](https://github.com/gngpp/ninja/actions/workflows/CI.yml/badge.svg)](https://github.com/gngpp/ninja/actions/workflows/CI.yml)
 [![CI](https://github.com/gngpp/ninja/actions/workflows/Release.yml/badge.svg)](https://github.com/gngpp/ninja/actions/workflows/Release.yml)
  <a target="_blank" href="https://github.com/gngpp/ninja/blob/main/LICENSE">
