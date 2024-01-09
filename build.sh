@@ -110,20 +110,20 @@ build_windows_target() {
     cd -
 }
 
-if [ "$os" = "windows" ]; then
-    target_list=(x86_64-pc-windows-msvc)
-    for target in "${target_list[@]}"; do
-        echo "Building $target"
+# if [ "$os" = "windows" ]; then
+#     target_list=(x86_64-pc-windows-msvc)
+#     for target in "${target_list[@]}"; do
+#         echo "Building $target"
 
-        docker_image=$(get_docker_image "$target")
+#         docker_image=$(get_docker_image "$target")
 
-        build_windows_target "$target"
+#         build_windows_target "$target"
 
-        if [ "$rmi" = "true" ]; then
-            rmi_docker_image "$docker_image"
-        fi
-    done
-fi
+#         if [ "$rmi" = "true" ]; then
+#             rmi_docker_image "$docker_image"
+#         fi
+#     done
+# fi
 
 if [ "$os" = "linux" ]; then
     # target_list=(x86_64-unknown-linux-musl aarch64-unknown-linux-musl armv7-unknown-linux-musleabi armv7-unknown-linux-musleabihf armv5te-unknown-linux-musleabi arm-unknown-linux-musleabi arm-unknown-linux-musleabihf i686-unknown-linux-gnu i586-unknown-linux-gnu)
