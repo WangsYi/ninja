@@ -22,8 +22,10 @@ root=$(pwd)
 [ ! -d uploads ] && mkdir uploads
 
 # Separate arrays for target architectures and Docker images
-target_architectures=("x86_64-unknown-linux-musl" "aarch64-unknown-linux-musl" "armv7-unknown-linux-musleabi" "armv7-unknown-linux-musleabihf" "arm-unknown-linux-musleabi" "arm-unknown-linux-musleabihf" "armv5te-unknown-linux-musleabi" "i686-unknown-linux-gnu" "i586-unknown-linux-gnu" "x86_64-pc-windows-msvc")
-docker_images=("ghcr.io/wangsyi/rust-musl-cross:x86_64-musl" "ghcr.io/wangsyi/rust-musl-cross:aarch64-musl" "ghcr.io/wangsyi/rust-musl-cross:armv7-musleabi" "ghcr.io/wangsyi/rust-musl-cross:armv7-musleabihf" "ghcr.io/wangsyi/rust-musl-cross:arm-musleabi" "ghcr.io/wangsyi/rust-musl-cross:arm-musleabihf" "ghcr.io/wangsyi/rust-musl-cross:armv5te-musleabi" "ghcr.io/wangsyi/rust-musl-cross:i686-musl" "ghcr.io/wangsyi/rust-musl-cross:i586-musl" "ghcr.io/wangsyi/cargo-xwin:latest")
+# target_architectures=("x86_64-unknown-linux-musl" "aarch64-unknown-linux-musl" "armv7-unknown-linux-musleabi" "armv7-unknown-linux-musleabihf" "arm-unknown-linux-musleabi" "arm-unknown-linux-musleabihf" "armv5te-unknown-linux-musleabi" "i686-unknown-linux-gnu" "i586-unknown-linux-gnu" "x86_64-pc-windows-msvc")
+# docker_images=("ghcr.io/wangsyi/rust-musl-cross:x86_64-musl" "ghcr.io/wangsyi/rust-musl-cross:aarch64-musl" "ghcr.io/wangsyi/rust-musl-cross:armv7-musleabi" "ghcr.io/wangsyi/rust-musl-cross:armv7-musleabihf" "ghcr.io/wangsyi/rust-musl-cross:arm-musleabi" "ghcr.io/wangsyi/rust-musl-cross:arm-musleabihf" "ghcr.io/wangsyi/rust-musl-cross:armv5te-musleabi" "ghcr.io/wangsyi/rust-musl-cross:i686-musl" "ghcr.io/wangsyi/rust-musl-cross:i586-musl" "ghcr.io/wangsyi/cargo-xwin:latest")
+target_architectures=("x86_64-unknown-linux-musl")
+docker_images=("ghcr.io/wangsyi/rust-musl-cross:x86_64-musl")
 
 get_docker_image() {
     local target_arch="$1"
