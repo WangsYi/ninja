@@ -338,7 +338,7 @@ fn build_client(
             builder = builder.local_addresses(v4, v6);
             LookupIpStrategy::Ipv6thenIpv4
         }
-        _ => LookupIpStrategy::Ipv4AndIpv6,
+        _ => LookupIpStrategy::Ipv4thenIpv6,
     };
 
     // init dns resolver
@@ -390,7 +390,7 @@ fn build_auth_client(
             builder = builder.local_addresses(v4, v6);
             LookupIpStrategy::Ipv6thenIpv4
         }
-        _ => LookupIpStrategy::Ipv4AndIpv6,
+        _ => LookupIpStrategy::Ipv4thenIpv6,
     };
 
     // init dns resolver
