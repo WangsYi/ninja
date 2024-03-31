@@ -1,27 +1,24 @@
 use openai::{
-    arkose::ArkoseToken,
+    arkose::{ArkoseContext, ArkoseToken, Type},
     context::{self, args::Args},
-    proxy,
+    with_context,
 };
 
 #[tokio::main]
 async fn main() {
-    let args = Args::builder()
-        .proxies(vec![proxy::Proxy::try_from((
-            "all",
-            "http://127.0.0.1:8100",
-        ))
-        .unwrap()])
-        .build();
-    context::init(args);
+    env_logger::init();
+    context::init(Args::builder().build());
     for _ in 0..100 {
         match ArkoseToken::new_from_har(
-            "/Users/gngpp/VSCode/ninja/har/auth0.openai.com_Archive.har",
+            &mut ArkoseContext::builder()
+                .client(with_context!(arkose_client))
+                .typed(Type::GPT4)
+                .build(),
         )
         .await
         {
             Ok(token) => {
-                println!("{}", token.value());
+                println!("{}", token.json());
             }
             Err(err) => {
                 println!("{}", err);

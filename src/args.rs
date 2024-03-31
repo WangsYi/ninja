@@ -1,6 +1,6 @@
 use crate::parse;
 use clap::{Args, Subcommand};
-use openai::{arkose::funcaptcha::Solver, proxy};
+use openai::{arkose::funcaptcha::solver::Solver, proxy};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
@@ -60,6 +60,8 @@ pub enum ServeSubcommand {
     Log,
     /// Generate MITM CA certificate
     Genca,
+    /// Show the impersonate user-agent list
+    UA,
     /// Generate config template file (toml format file)
     GT {
         /// Configuration template output to file (toml format file)
@@ -100,7 +102,7 @@ pub struct ServeArgs {
     #[clap(long, default_value = "60")]
     pub(super) tcp_keepalive: usize,
 
-    /// Server/Client No TCP keepalive
+    /// No TCP keepalive (Client)
     #[clap(short = 'H', long, env = "NO_TCP_KEEPALIVE", default_value = "false")]
     pub(super) no_keepalive: bool,
 
@@ -111,7 +113,7 @@ pub struct ServeArgs {
     /// Client proxy, support multiple proxy, use ',' to separate, Format: proto|type
     /// Proto: all/api/auth/arkose, default: all
     /// Type: interface/proxy/ipv6 subnet，proxy type only support: socks5/http/https
-    /// Example: all|socks5://192.168.1.1:1080, api|10.0.0.1, auth|2001:db8::/32, http://192.168.1.1:1081
+    /// e.g. all|socks5://192.168.1.1:1080, api|10.0.0.1, auth|2001:db8::/32, http://192.168.1.1:1081
     #[clap(short = 'x',long, env = "PROXIES", value_parser = parse::parse_proxies_url, verbatim_doc_comment)]
     pub(super) proxies: Option<std::vec::Vec<proxy::Proxy>>,
 
@@ -120,15 +122,16 @@ pub struct ServeArgs {
     pub(super) enable_direct: bool,
 
     /// Impersonate User-Agent, separate multiple ones with ","
-    /// Safari: safari12,safari15_3,safari15_5
-    /// OkHttp: okhttp3_9,okhttp3_11,okhttp3_13,okhttp3_14,okhttp4_9,okhttp4_10,okhttp5
-    /// Chrome: chrome99,chrome104,chrome105,chrome106,chrome107,chrome108,chrome109,chrome114,chrome116,chrome118,chrome119
     #[clap(short = 'I',long, env = "IMPERSONATE_UA", value_parser = parse::parse_impersonate_uas, verbatim_doc_comment)]
     pub(super) impersonate_uas: Option<std::vec::Vec<String>>,
 
     /// Enabled Cookie Store
     #[clap(long, env = "COOKIE_STORE")]
     pub(super) cookie_store: bool,
+
+    /// Use fastest DNS resolver
+    #[clap(long, env = "FASTEST_DNS")]
+    pub(super) fastest_dns: bool,
 
     /// TLS certificate file path
     #[clap(long, env = "TLS_CERT", requires = "tls_key")]
@@ -146,13 +149,13 @@ pub struct ServeArgs {
     #[clap(long, env = "CF_SITE_KEY", requires = "cf_site_key")]
     pub(super) cf_secret_key: Option<String>,
 
-    /// Login Authentication Key
+    /// Login/Arkose/HAR Authentication Key
     #[clap(short = 'A', long, env = "AUTH_KEY")]
     pub(super) auth_key: Option<String>,
 
-    /// Disable WebUI
-    #[clap(short = 'D', long, env = "DISABLE_WEBUI")]
-    pub(super) disable_webui: bool,
+    /// Enable WebUI
+    #[clap(long, env = "ENABLE_WEBUI", requires = "arkose_endpoint")]
+    pub(super) enable_webui: bool,
 
     /// Enable file endpoint proxy
     #[clap(short = 'F', long, env = "ENABLE_FILE_PROXY")]
@@ -166,7 +169,7 @@ pub struct ServeArgs {
     #[clap(short = 'W', long, env = "VISITOR_EMAIL_WHITELIST", value_parser = parse::parse_email_whitelist)]
     pub(super) visitor_email_whitelist: Option<std::vec::Vec<String>>,
 
-    /// Arkose endpoint, Example: https://client-api.arkoselabs.com
+    /// Arkose endpoint, e.g. https://client-api.arkoselabs.com
     #[clap(long, value_parser = parse::parse_url)]
     pub(super) arkose_endpoint: Option<String>,
 
@@ -178,53 +181,48 @@ pub struct ServeArgs {
     #[clap(short = 'S', long, default_value = "false")]
     pub(super) arkose_gpt3_experiment_solver: bool,
 
-    /// About the browser HAR directory path requested by ChatGPT GPT-3.5 ArkoseLabs
+    /// About the browser HAR directory path requested by ArkoseLabs
     #[clap(long, value_parser = parse::parse_dir_path)]
-    pub(super) arkose_gpt3_har_dir: Option<PathBuf>,
-
-    /// About the browser HAR directory path requested by ChatGPT GPT-4 ArkoseLabs
-    #[clap(long, value_parser = parse::parse_dir_path)]
-    pub(super) arkose_gpt4_har_dir: Option<PathBuf>,
-
-    ///  About the browser HAR directory path requested by Auth ArkoseLabs
-    #[clap(long, value_parser = parse::parse_dir_path)]
-    pub(super) arkose_auth_har_dir: Option<PathBuf>,
-
-    /// About the browser HAR directory path requested by Platform ArkoseLabs
-    #[clap(long, value_parser = parse::parse_dir_path)]
-    pub(super) arkose_platform_har_dir: Option<PathBuf>,
-
-    /// HAR file upload authenticate key
-    #[clap(short = 'K', long)]
-    pub(super) arkose_har_upload_key: Option<String>,
+    pub(super) arkose_har_dir: Option<PathBuf>,
 
     /// About ArkoseLabs solver platform
     #[clap(
         short = 's',
         long,
-        default_value = "yescaptcha",
+        default_value = "fcsrv",
         requires = "arkose_solver_key"
     )]
     pub(super) arkose_solver: Solver,
 
-    #[clap(short = 'k', long)]
     /// About the solver client key by ArkoseLabs
+    #[clap(short = 'k', long)]
     pub(super) arkose_solver_key: Option<String>,
+
+    /// About the solver client endpoint by ArkoseLabs
+    #[clap(long, value_parser = parse::parse_url, requires = "arkose_solver_key")]
+    pub(super) arkose_solver_endpoint: Option<String>,
+
+    /// About the solver submit multiple image limit by ArkoseLabs
+    #[clap(long, default_value = "1", requires = "arkose_solver_key")]
+    pub(super) arkose_solver_limit: usize,
+
+    /// About the solver tguess endpoint by ArkoseLabs
+    #[clap(long, value_parser = parse::parse_url)]
+    pub(super) arkose_solver_tguess_endpoint: Option<String>,
+
+    /// About the solver image store directory by ArkoseLabs
+    #[clap(long, value_parser = parse::parse_dir_path)]
+    pub(super) arkose_solver_image_dir: Option<PathBuf>,
 
     /// Enable token bucket flow limitation
     #[clap(short = 'T', long)]
     #[cfg(feature = "limit")]
     pub(super) tb_enable: bool,
 
-    /// Token bucket store strategy (mem/redis)
+    /// Token bucket store strategy (mem/redb)
     #[clap(long, default_value = "mem", requires = "tb_enable")]
     #[cfg(feature = "limit")]
-    pub(super) tb_store_strategy: String,
-
-    /// Token bucket redis connection url
-    #[clap(long, default_value = "redis://127.0.0.1:6379", requires = "tb_enable", value_parser = parse::parse_url)]
-    #[cfg(feature = "limit")]
-    pub(super) tb_redis_url: String,
+    pub(super) tb_strategy: String,
 
     /// Token bucket capacity
     #[clap(long, default_value = "60", requires = "tb_enable")]
@@ -243,22 +241,22 @@ pub struct ServeArgs {
 
     /// Preauth MITM server bind address
     #[clap(
-        short = 'B',
-        long,
-        env = "PREAUTH_BIND",
-        value_parser = parse::parse_socket_addr,
+    short = 'B',
+    long,
+    env = "PREAUTH_BIND",
+    value_parser = parse::parse_socket_addr,
     )]
     pub(super) pbind: Option<std::net::SocketAddr>,
 
     /// Preauth MITM server upstream proxy
     /// Supports: http/https/socks5/socks5h
     #[clap(
-        short = 'X',
-        long,
-        env = "PREAUTH_UPSTREAM",
-        value_parser = parse::parse_url,
-        requires = "pbind",
-        verbatim_doc_comment
+    short = 'X',
+    long,
+    env = "PREAUTH_UPSTREAM",
+    value_parser = parse::parse_url,
+    requires = "pbind",
+    verbatim_doc_comment
     )]
     pub(super) pupstream: Option<String>,
 
