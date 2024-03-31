@@ -5,6 +5,7 @@ use crate::{
     auth::AuthClient,
     proxy::{self, Ipv6CidrExt},
 };
+use crate::debug;
 use moka::sync::Cache;
 use reqwest::{impersonate::Impersonate, Client};
 use std::sync::{Arc, OnceLock};
@@ -286,7 +287,9 @@ impl ClientRoundRobinBalancer {
         // if there is only one client, return it
         if self.pool.len() == 1 {
             let client = self.pool.first().expect("Init client failed");
+            debug!("................................................4");
             if !self.config.ipv6_subnets.is_empty() {
+                debug!("................................................3");
                 return self.rebuild_client_with_ipv6(client);
             }
             return client.clone();
@@ -326,11 +329,11 @@ fn build_client(
             .tcp_keepalive(Duration::from_secs(config.tcp_keepalive))
             .pool_idle_timeout(Duration::from_secs(config.pool_idle_timeout));
     }
-
     // return lookup ip strategy
     let ip_s = match (preferred_addrs, fallback_addrs) {
         (None, Some(ip_addr)) | (Some(ip_addr), None) => {
             builder = builder.local_address(ip_addr);
+            debug!("Using local address-----------------------1: {}", ip_addr);
             if ip_addr.is_ipv4() {
                 LookupIpStrategy::Ipv4Only
             } else {
@@ -339,10 +342,13 @@ fn build_client(
         }
         (Some(IpAddr::V4(v4)), Some(IpAddr::V6(v6)))
         | (Some(IpAddr::V6(v6)), Some(IpAddr::V4(v4))) => {
+            // debug!("Using local address-----------------------11: {}, {}", v4.into(), v6.into());
+            debug!("................................................11");
             builder = builder.local_addresses(v4, v6);
             LookupIpStrategy::Ipv6thenIpv4
         }
-        _ => LookupIpStrategy::Ipv4AndIpv6,
+        // _ => LookupIpStrategy::Ipv4AndIpv6,
+        _ => LookupIpStrategy::Ipv4Only,
     };
 
     // init dns resolver
@@ -378,10 +384,10 @@ fn build_auth_client(
             .tcp_keepalive(Duration::from_secs(config.tcp_keepalive))
             .pool_idle_timeout(Duration::from_secs(config.pool_idle_timeout));
     }
-
     // return lookup ip strategy
     let ip_s = match (preferred_addrs, fallback_addrs) {
         (None, Some(ip_addr)) | (Some(ip_addr), None) => {
+            debug!("Using local address-----------------------2: {}", ip_addr.to_string());
             builder = builder.local_address(ip_addr);
             if ip_addr.is_ipv4() {
                 LookupIpStrategy::Ipv4Only
@@ -391,10 +397,12 @@ fn build_auth_client(
         }
         (Some(IpAddr::V4(v4)), Some(IpAddr::V6(v6)))
         | (Some(IpAddr::V6(v6)), Some(IpAddr::V4(v4))) => {
+            debug!("Using local address-----------------------2: {}, {}", v4.to_string(), v6.to_string());
             builder = builder.local_addresses(v4, v6);
             LookupIpStrategy::Ipv6thenIpv4
         }
-        _ => LookupIpStrategy::Ipv4AndIpv6,
+        // _ => LookupIpStrategy::Ipv4AndIpv6,
+        _ => LookupIpStrategy::Ipv4Only,
     };
 
     // init dns resolver

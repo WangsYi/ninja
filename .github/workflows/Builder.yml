@@ -26,7 +26,7 @@ jobs:
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
-          username: gngpp
+          username: WangsYi
           password: ${{ secrets.CR_PAT }}
       
       - name: build

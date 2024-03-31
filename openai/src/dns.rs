@@ -10,6 +10,8 @@ use std::io;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
+use crate::info;
+
 /// Wrapper around an `AsyncResolver`, which implements the `Resolve` trait.
 #[derive(Debug, Clone)]
 pub(crate) struct TrustDnsResolver {
@@ -39,11 +41,13 @@ struct SocketAddrs {
 impl Resolve for TrustDnsResolver {
     fn resolve(&self, name: Name) -> Resolving {
         let resolver = self.clone();
+        info!("----------------DNS lookup: {}, {:?}", name.as_str(), self.ip_strategy);
         Box::pin(async move {
             let resolver = resolver
                 .state
                 .get_or_try_init(|| async { new_resolver(resolver.ip_strategy) })
                 .await?;
+            
             let lookup = resolver.lookup_ip(name.as_str()).await?;
             let addrs: Addrs = Box::new(SocketAddrs {
                 iter: lookup.into_iter(),
