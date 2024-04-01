@@ -115,6 +115,7 @@ impl std::fmt::Debug for AgentImpersonate {
             Impersonate::OkHttp5 => "okhttp5",
             Impersonate::Edge99 => "edge99",
             Impersonate::Edge101 => "edge101",
+            Impersonate::Edge122 => "edge122",
         };
         f.write_str(name)
     }
